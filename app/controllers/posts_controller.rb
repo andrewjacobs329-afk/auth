@@ -8,21 +8,29 @@ class PostsController < ApplicationController
   end
 
   def new
-    # render posts/new view, the form for a new Post
-    render({ :template => "posts/new" })
+    if @current_user != nil
+      # render posts/new view, the form for a new Post
+      render({ :template => "posts/new" })
+    else
+      redirect_to("/login")
+    end
   end
 
   def create
-    # start with a new Post
-    post = Post.new
-    # assign the form's values to the Post's columns
-    post["author"] = params["author"]
-    post["body"] = params["body"]
-    post["image"] = params["image"]
-    # save the Post row
-    post.save
-    # redirect the user
-    redirect_to("/posts")
+    if @current_user != nil
+      # start with a new Post
+      post = Post.new
+      # assign the form's values to the Post's columns
+      post["body"] = params["body"]
+      post["image"] = params["image"]
+      post["user_id"] = @current_user["id"]
+      # save the Post row
+      post.save
+      # redirect the user
+      redirect_to("/posts")
+    else
+      redirect_to("/login")
+    end
   end
 
   def destroy
