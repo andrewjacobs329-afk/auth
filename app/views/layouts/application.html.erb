@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>auth</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag "application" %>
+  </head>
+
+  <body>
+    <nav>
+      <a href="/">Home</a> |
+      <a href="/posts">Tacostagram</a> |
+      <% if @current_user %>
+        <a href="/users/<%= @current_user["id"] %>"><%= @current_user["first_name"] %></a> |
+        <a href="/logout">Log out</a>
+      <% else %>
+        <a href="/users/new">Sign up</a> |
+        <a href="/login">Log in</a>
+      <% end %>
+    </nav>
+
+    <% if flash["notice"] %>
+      <p><em><%= flash["notice"] %></em></p>
+    <% end %>
+
+    <%= yield %>
+  </body>
+</html>

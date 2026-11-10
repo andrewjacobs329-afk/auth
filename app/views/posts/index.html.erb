@@ -1,0 +1,9 @@
+<h1>Tacostagram</h1>
+
+<% for post in @posts %>
+  <div>
+    <h3><%= post["author"] %></h3>
+    <img src="<%= post["image"] %>" width="400">
+    <p><%= post["body"] %></p>
+  </div>
+<% end %>

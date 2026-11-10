@@ -1,0 +1,11 @@
+<h1><%= @companies.count %> companies</h1>
+<ul>
+  <% for company in @companies %>
+    <li>
+      <a href="/companies/<%= company["id"] %>"><%= company["name"] %></a>,
+      <%= company["city"] %>, <%= company["state"] %>
+    </li>
+  <% end %>
+</ul>
+
+<p><a href="/companies/new">New company</a></p>

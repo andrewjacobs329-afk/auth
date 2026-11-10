@@ -1,0 +1,10 @@
+<h1><%= @user["first_name"] %> <%= @user["last_name"] %></h1>
+
+<dl>
+  <dt>Email</dt>
+  <dd><%= @user["email"] %></dd>
+  <dt>Member since</dt>
+  <dd><%= @user["created_at"].strftime("%B %-d, %Y") %></dd>
+</dl>
+
+<p><a href="/posts">Back to the posts</a></p>

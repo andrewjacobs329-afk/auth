@@ -1,0 +1,242 @@
+#!/usr/bin/env ruby
+# Copies every conversation your AI agent has had in this folder into agent-log/,
+# one file per conversation, so it goes into your next commit. Run it before every
+# commit; it is safe to run any number of times. A copy is only ever replaced by a
+# newer version of the same conversation, never removed.
+#
+#   bin/save-log                    prints what it found for each agent
+#   bin/save-log --quiet            prints nothing
+#   bin/save-log --hook <agent>     what an agent's hook runs at the end of each turn: copies
+#                                   the conversation named in the JSON the agent sends, quietly
+#
+# Your agent runs it at the end of each turn, so the log stays current.
+
+require "fileutils"
+require "json"
+
+# One conversation file in an agent's home folder.
+class Transcript
+  attr_reader :path, :name
+
+  def initialize(path, name)
+    @path = path
+    @name = name
+  end
+
+  # Copies it into folder if the copy there is missing or older. A copy is never replaced
+  # by a smaller file, so the log in a commit is never shorter than in the one before.
+  # Returns :new, :updated or :unchanged.
+  def save_to(folder)
+    copy = File.join(folder, name)
+    if File.exist?(copy)
+      return :unchanged if File.size(path) < File.size(copy)
+      return :unchanged if File.size(path) == File.size(copy) && FileUtils.compare_file(copy, path)
+    end
+
+    status = File.exist?(copy) ? :updated : :new
+    FileUtils.mkdir_p(folder)
+    # Write beside it, then swap it in, so a commit made mid-copy never takes half a file.
+    FileUtils.cp(path, "#{copy}.partial")
+    File.rename("#{copy}.partial", copy)
+    status
+  end
+end
+
+# Where one agent keeps its conversations, and which of them happened in this folder.
+class AgentHome
+  def initialize(root, log_folder)
+    @root = root
+    @log_folder = log_folder
+  end
+
+  # Every conversation of this agent's that happened here.
+  def transcripts
+    []
+  end
+
+  # The conversation named in a hook's JSON, if it happened here.
+  def transcript_from_hook(_payload)
+    nil
+  end
+
+  private
+
+  def home(*parts)
+    File.join(Dir.home, *parts)
+  end
+
+  # True if dir is this folder or a folder inside it.
+  def here?(dir)
+    dir == @root || dir.to_s.start_with?("#{@root}/")
+  end
+
+  # True if this folder's path appears anywhere in the file.
+  def mentions_root?(path)
+    File.read(path).match?(/#{Regexp.escape(@root)}(?![\w.-])/)
+  end
+
+  def already_saved?(name)
+    File.exist?(File.join(@log_folder, name))
+  end
+
+  # The first value found for key in the first lines of a JSONL file.
+  def first_value(path, key, lines: 50)
+    File.foreach(path).first(lines).each do |line|
+      value = JSON.parse(line)[key] rescue nil
+      return value if value
+    end
+    nil
+  end
+end
+
+# Claude Code: ~/.claude/projects/<this folder, every non-alphanumeric character a dash>/<session>.jsonl,
+# and the conversations of its subagents in <session>/subagents/.
+class ClaudeCode < AgentHome
+  def label = "Claude Code"
+  def how_to_save = "type /export agent-log/claude-export.txt in Claude Code"
+
+  def transcripts
+    Dir[File.join(ENV.fetch("CLAUDE_CONFIG_DIR", home(".claude")), "projects", "*")].flat_map do |project|
+      sessions = Dir[File.join(project, "*.jsonl")] + Dir[File.join(project, "*", "subagents", "*.jsonl")]
+      sessions.select { |path| File.basename(project) == folder_name || here?(first_value(path, "cwd")) }
+              .map { |path| Transcript.new(path, "claude-#{session_name(project, path)}.jsonl") }
+    end
+  end
+
+  private
+
+  def folder_name
+    @root.gsub(/[^a-zA-Z0-9]/, "-")
+  end
+
+  # The session id, or for a subagent, its session id and its own.
+  def session_name(project, path)
+    path.delete_prefix("#{project}/").delete_suffix(".jsonl").sub("/subagents/", "-")
+  end
+end
+
+# Codex: <CODEX_HOME, or ~/.codex>/sessions/<year>/<month>/<day>/rollout-<time>-<session>.jsonl.
+# The first line says which folder the session ran in.
+class Codex < AgentHome
+  def label = "Codex"
+  def how_to_save = "type /export agent-log/codex-export.md in Codex"
+
+  def transcripts
+    codex_home = ENV.fetch("CODEX_HOME", home(".codex"))
+    Dir[File.join(codex_home, "sessions", "**", "rollout-*.jsonl")].filter_map do |path|
+      meta = first_value(path, "payload", lines: 1) || {}
+      next unless here?(meta["cwd"])
+
+      Transcript.new(path, "codex-#{meta["id"] || File.basename(path, ".jsonl")}.jsonl")
+    end
+  end
+end
+
+# Antigravity CLI: ~/.gemini/antigravity-cli/brain/<conversation>/.system_generated/logs/transcript.jsonl.
+# Nothing in it says which folder it ran in, so its Stop hook names each conversation as it
+# happens (.agents/hooks.json); after that, it is found by its copy here, or by this folder's path.
+class Antigravity < AgentHome
+  def label = "Antigravity CLI"
+  def how_to_save = "it has no export command, so ask it one more question here and run bin/save-log again"
+
+  def transcripts
+    Dir[home(".gemini", "antigravity-cli", "brain", "*", ".system_generated", "logs", "transcript.jsonl")].filter_map do |path|
+      transcript = Transcript.new(path, name_for(path))
+      transcript if already_saved?(transcript.name) || mentions_root?(path)
+    end
+  end
+
+  def transcript_from_hook(payload)
+    path = payload["transcriptPath"]
+    return unless path && File.exist?(path) && Array(payload["workspacePaths"]).any? { |dir| here?(dir) }
+
+    Transcript.new(path, name_for(path))
+  end
+
+  private
+
+  def name_for(path)
+    "antigravity-#{path.split("/")[-4]}.jsonl"
+  end
+end
+
+# Gemini CLI: ~/.gemini/tmp/<this folder's project>/chats/session-<time>-<id>.jsonl. Its
+# AfterAgent hook names each one as it happens (.gemini/settings.json).
+class GeminiCli < AgentHome
+  def label = "Gemini CLI"
+  def how_to_save = "type /chat share agent-log/gemini-export.json in Gemini CLI"
+
+  def transcripts
+    Dir[home(".gemini", "tmp", "*", "chats", "session-*.{json,jsonl}")].filter_map do |path|
+      transcript = Transcript.new(path, "gemini-#{File.basename(path)}")
+      transcript if already_saved?(transcript.name) || mentions_root?(path)
+    end
+  end
+
+  def transcript_from_hook(payload)
+    path = payload["transcript_path"]
+    return unless path && File.exist?(path) && here?(payload["cwd"])
+
+    Transcript.new(path, "gemini-#{File.basename(path)}")
+  end
+end
+
+# Every agent's conversations in this folder, copied into agent-log/.
+class AgentLog
+  AGENTS = { "claude" => ClaudeCode, "codex" => Codex, "antigravity" => Antigravity, "gemini" => GeminiCli }.freeze
+
+  def initialize(root)
+    @root = root
+    @folder = File.join(root, "agent-log")
+  end
+
+  def save(quiet: false)
+    found_any = false
+    agents.each do |agent|
+      counts = agent.transcripts.uniq(&:name).map { |transcript| transcript.save_to(@folder) }.tally
+      found_any ||= counts.any?
+      report(agent, counts) unless quiet
+    end
+    puts "\nNothing found for any agent. Ran your agent in this folder? Check that it is the top folder (where README.md is)." unless quiet || found_any
+  end
+
+  # Copies the one conversation an agent's hook named, then everything else, even if the
+  # hook's part went wrong.
+  def save_from_hook(agent_key, payload)
+    agent = AGENTS[agent_key]&.new(@root, @folder)
+    agent&.transcript_from_hook(payload.is_a?(Hash) ? payload : {})&.save_to(@folder)
+  ensure
+    save(quiet: true)
+  end
+
+  private
+
+  def agents
+    AGENTS.values.map { |agent_class| agent_class.new(@root, @folder) }
+  end
+
+  def report(agent, counts)
+    if counts.empty?
+      puts "#{agent.label}: nothing found for this folder. If you used it here, save the conversation by hand: #{agent.how_to_save}."
+    else
+      total = counts.values.sum
+      puts "#{agent.label}: #{total} #{total == 1 ? "conversation" : "conversations"} " \
+           "(#{counts.fetch(:new, 0)} new, #{counts.fetch(:updated, 0)} updated, #{counts.fetch(:unchanged, 0)} unchanged)"
+    end
+  end
+end
+
+hook = ARGV.index("--hook")
+quiet = hook || ARGV.include?("--quiet")
+begin
+  log = AgentLog.new(File.realpath(File.expand_path("..", __dir__)))
+  if hook
+    payload = $stdin.tty? ? {} : (JSON.parse($stdin.read) rescue {})
+    log.save_from_hook(ARGV[hook + 1], payload)
+  else
+    log.save(quiet: quiet)
+  end
+rescue StandardError
+  # A hook must never get in the agent's way; run it by hand to see the error.
+  raise unless quiet
+end

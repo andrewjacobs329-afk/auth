@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bin/rails test)",
+      "Bash(bin/rails test *)",
+      "Bash(bin/rails runner *)",
+      "Bash(bin/rails db:migrate)",
+      "Bash(bin/rails generate model *)",
+      "Bash(bin/rails generate migration *)",
+      "Bash(bin/rails generate controller *)",
+      "Bash(bin/rails routes)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "ask": [
+      "Bash(bin/reset-db)"
+    ],
+    "deny": [
+      "Read(/agent-log/**)",
+      "Edit(/agent-log/**)",
+      "Bash(*agent-log*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/bin/save-log --quiet",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/bin/save-log --quiet",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

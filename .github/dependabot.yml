@@ -1,0 +1,9 @@
+# Dependabot: GitHub reads this file and opens a pull request when a gem in
+# Gemfile.lock has a newer version, with the changelog in the description. It is
+# off until the repo's Settings turn it on (Code security, Dependabot).
+version: 2
+updates:
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"

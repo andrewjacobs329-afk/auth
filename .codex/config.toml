@@ -1,0 +1,9 @@
+# Codex settings for this repo. Codex reads them only in a trusted project;
+# .devcontainer/agent-settings.sh marks the Codespace's folder as trusted.
+
+# Codex's own sandbox cannot start inside a container (it needs Linux user
+# namespaces, which the container blocks), so every command would fail or ask
+# to run unsandboxed. The Codespace is the sandbox instead: a throwaway
+# container, with the work itself in git. The rules in rules/ still apply.
+approval_policy = "on-request"
+sandbox_mode = "danger-full-access"

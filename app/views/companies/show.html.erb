@@ -1,0 +1,20 @@
+<h1><%= @company["name"] %></h1>
+
+<h2><%= @company["city"] %>, <%= @company["state"] %></h2>
+
+<h3>Contacts</h3>
+
+<ul>
+  <% for contact in @contacts %>
+    <li><%= contact["first_name"] %> <%= contact["last_name"] %></li>
+  <% end %>
+</ul>
+
+<p><a href="/companies/<%= @company["id"] %>/edit">Edit company</a></p>
+
+<form action="/companies/<%= @company["id"] %>" method="post">
+  <input type="hidden" name="_method" value="delete">
+  <button>Delete</button>
+</form>
+
+<p><a href="/companies">Back to all companies</a></p>

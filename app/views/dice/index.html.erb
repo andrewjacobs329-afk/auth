@@ -1,0 +1,9 @@
+<% die1 = rand(1..6) %>
+<% die2 = rand(1..6) %>
+<h1>Dice</h1>
+<p>
+  <img src="/images/dice/<%= die1 %>.svg" width="100">
+  <img src="/images/dice/<%= die2 %>.svg" width="100">
+</p>
+<p>You rolled <%= die1 %> and <%= die2 %>, for a total of <%= die1 + die2 %>.</p>
+<a href="/dice">Roll again</a>

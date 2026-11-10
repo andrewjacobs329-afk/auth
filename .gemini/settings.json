@@ -1,0 +1,40 @@
+{
+  "context": {
+    "fileName": [
+      "AGENTS.md"
+    ]
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit"
+  },
+  "tools": {
+    "allowed": [
+      "run_shell_command(bin/rails test)",
+      "run_shell_command(bin/rails runner)",
+      "run_shell_command(bin/rails db:migrate)",
+      "run_shell_command(bin/rails generate model)",
+      "run_shell_command(bin/rails generate migration)",
+      "run_shell_command(bin/rails generate controller)",
+      "run_shell_command(bin/rails routes)",
+      "run_shell_command(gh issue view)",
+      "run_shell_command(gh issue list)",
+      "run_shell_command(git status)",
+      "run_shell_command(git diff)",
+      "run_shell_command(git log)"
+    ]
+  },
+  "hooks": {
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "name": "save-log",
+            "type": "command",
+            "command": "\"$GEMINI_PROJECT_DIR\"/bin/save-log --hook gemini",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}

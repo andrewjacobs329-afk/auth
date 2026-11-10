@@ -1,0 +1,51 @@
+<h1 class="text-2xl font-semibold mb-2">Data</h1>
+<p class="text-stone-700 mb-1">
+  Every table in the database and the rows in it, newest at the bottom. Refresh the page after
+  changing the data to see what changed.
+</p>
+<p class="text-sm text-stone-600 mb-6">
+  This page only reads. A table appears once its migration has run. In the terminal,
+  <code>bin/rails runner scripts/show_data.rb</code> prints the same thing.
+</p>
+
+<% if @tables.empty? %>
+  <p class="p-3 rounded bg-amber-50 border border-amber-300 text-amber-900">
+    No tables yet. Write a migration and run <code>bin/rails db:migrate</code>.
+  </p>
+<% end %>
+
+<% @tables.each do |table| %>
+  <section class="mb-8">
+    <h2 class="font-mono font-semibold mb-1">
+      <%= table.name %>
+      <span class="font-sans font-normal text-sm text-stone-600">· <%= pluralize(table.count, "row") %></span>
+    </h2>
+    <% if table.cut? %>
+      <p class="text-sm text-stone-600 mb-1">Showing the newest <%= DatabaseTable::MAX_ROWS %>.</p>
+    <% end %>
+    <div class="bg-white border border-stone-200 rounded overflow-x-auto">
+      <table class="text-sm w-full">
+        <thead class="bg-stone-100 text-left">
+          <tr>
+            <% table.columns.each do |column| %>
+              <th class="font-mono font-semibold px-3 py-1.5 border-b border-stone-200 whitespace-nowrap"><%= column %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows = table.rows %>
+          <% if rows.empty? %>
+            <tr><td colspan="<%= table.columns.size %>" class="px-3 py-1.5 text-stone-500 italic">No rows.</td></tr>
+          <% end %>
+          <% rows.each do |row| %>
+            <tr class="border-b border-stone-100 last:border-0">
+              <% row.each do |value| %>
+                <td class="font-mono px-3 py-1.5 align-top whitespace-nowrap"><%= value.nil? ? content_tag(:span, "nil", class: "text-stone-400") : value %></td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>

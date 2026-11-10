@@ -1,0 +1,77 @@
+# Routine commands Codex may run without asking, and the ones that always ask
+# because they delete data.
+
+prefix_rule(
+    pattern = ["bin/rails", "test"],
+    decision = "allow",
+    justification = "Running the tests changes nothing",
+)
+
+prefix_rule(
+    pattern = ["bin/rails", "runner"],
+    decision = "allow",
+    justification = "Running a Ruby file in this app",
+)
+
+prefix_rule(
+    pattern = ["bin/rails", "db:migrate"],
+    decision = "allow",
+    justification = "Applying this repo's migrations",
+)
+
+prefix_rule(
+    pattern = ["bin/rails", "generate", ["model", "migration", "controller"]],
+    decision = "allow",
+    justification = "Generating a model, migration or controller file",
+)
+
+prefix_rule(
+    pattern = ["bin/rails", "routes"],
+    decision = "allow",
+    justification = "Lists the app's routes",
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", ["view", "list"]],
+    decision = "allow",
+    justification = "Reading the tickets on this repo",
+)
+
+prefix_rule(
+    pattern = ["git", ["status", "diff", "log"]],
+    decision = "allow",
+    justification = "Reading the repo's state",
+)
+
+prefix_rule(
+    pattern = ["bin/reset-db"],
+    decision = "prompt",
+    justification = "Deletes every row in the database",
+)
+
+prefix_rule(
+    pattern = ["bin/rails", ["db:rollback", "db:reset", "db:drop", "db:migrate:reset"]],
+    decision = "prompt",
+    justification = "Undoes migrations or deletes the database",
+)
+
+# agent-log/ is the record of each conversation, kept for graders. These rules
+# match only commands that start this way; AGENTS.md covers the rest, and file
+# edits, which rules never see.
+prefix_rule(
+    pattern = [["rm", "mv", "truncate"], "agent-log"],
+    decision = "forbidden",
+    justification = "agent-log/ is the record of this conversation, kept for graders",
+)
+
+prefix_rule(
+    pattern = ["rm", ["-r", "-f", "-rf", "-fr"], "agent-log"],
+    decision = "forbidden",
+    justification = "agent-log/ is the record of this conversation, kept for graders",
+)
+
+prefix_rule(
+    pattern = ["git", ["rm", "checkout", "restore"], "agent-log"],
+    decision = "forbidden",
+    justification = "agent-log/ is the record of this conversation, kept for graders",
+)

@@ -1,0 +1,18 @@
+<h1>Edit <%= @company["name"] %></h1>
+
+<form action="/companies/<%= @company["id"] %>" method="post">
+  <input type="hidden" name="_method" value="patch">
+  <p>
+    <label for="name">Name</label>
+    <input type="text" name="name" id="name" value="<%= @company["name"] %>">
+  </p>
+  <p>
+    <label for="city">City</label>
+    <input type="text" name="city" id="city" value="<%= @company["city"] %>">
+    <label for="state">State</label>
+    <input type="text" name="state" id="state" value="<%= @company["state"] %>">
+  </p>
+  <button>Save</button>
+</form>
+
+<p><a href="/companies/<%= @company["id"] %>">Back to <%= @company["name"] %></a></p>

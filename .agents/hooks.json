@@ -1,0 +1,7 @@
+{
+  "save-log": {
+    "Stop": [
+      { "type": "command", "command": "bin/save-log --hook antigravity", "timeout": 30 }
+    ]
+  }
+}

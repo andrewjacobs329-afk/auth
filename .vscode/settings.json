@@ -1,0 +1,7 @@
+{
+  "emmet.includeLanguages": {
+      "ruby": "html",
+      "erb": "html"
+  },
+  "editor.tabSize": 2
+}
