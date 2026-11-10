@@ -25,4 +25,15 @@ class PostsController < ApplicationController
     redirect_to("/posts")
   end
 
+  def destroy
+    # find the Post
+    post = Post.find_by({ "id" => params["id"] })
+    # destroy the Post row if it belongs to the logged-in user
+    if @current_user != nil && post != nil && post["user_id"] == @current_user["id"]
+      post.destroy
+    end
+    # redirect the user
+    redirect_to("/posts")
+  end
+
 end

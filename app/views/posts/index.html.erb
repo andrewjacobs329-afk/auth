@@ -5,5 +5,11 @@
     <h3><%= post["author"] %></h3>
     <img src="<%= post["image"] %>" width="400">
     <p><%= post["body"] %></p>
+    <% if @current_user != nil && post["user_id"] == @current_user["id"] %>
+      <form action="/posts/<%= post["id"] %>" method="post">
+        <input type="hidden" name="_method" value="delete">
+        <button>Delete</button>
+      </form>
+    <% end %>
   </div>
 <% end %>
