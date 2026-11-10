@@ -9,7 +9,8 @@ class SessionsController < ApplicationController
     # 1. find the User whose email was typed in the form
     user = User.find_by({ "email" => params["email"] })
     # 2. check the password
-    if user && user["password"] == params["password"]
+    # if user && user["password"] == params["password"]
+    if BCrypt::Password.new(user["password"]) == params["password"]
       # 3. if both hold, put the user's id in the session, then redirect to the posts
       session["user_id"] = user["id"]
       flash["notice"] = "Welcome back, #{user["first_name"]}."

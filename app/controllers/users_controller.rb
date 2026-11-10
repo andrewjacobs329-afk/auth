@@ -19,6 +19,7 @@ class UsersController < ApplicationController
     user["first_name"] = params["first_name"]
     user["last_name"] = params["last_name"]
     user["email"] = params["email"]
+    encrypted_password = BCrypt::Passwords.create(params["passowrd"])
     user["password"] = params["password"]
     # save the User row
     user.save
